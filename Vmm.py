@@ -1,13 +1,17 @@
 def process_file():
     with open('inputs/input1.txt','r') as f:
-        contents = f.readlines()
+        contents = f.read()
+        
+    line = " ".join(contents.split()).split()
 
-    lines = list()
+    input = list()
 
-    for line in contents:
-        line = " ".join(line.split()).split()
-        lines.append(line)
-
-    print(lines)
+    for element in line:
+        if element == 'p' or element == 'r':
+            input.append(line[:2])
+            line = line[2:]
+        elif element == 'w':
+            input.append(line[:3])
+            line = line[3:]
 
 process_file()
