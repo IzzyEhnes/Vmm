@@ -15,6 +15,10 @@ class Vmm:
 
     num_memory_accesses = 0
     num_triples = num_memory_accesses + 1
+    num_swap_ins = 0
+    num_swap_outs = 0
+    num_pages_malloced = 0
+    total_memory_cycles = 0
 
     def process_file():
         with open('inputs/input1.txt','r') as f:
@@ -31,9 +35,6 @@ class Vmm:
             elif element == 'w':
                 input.append(line[:3])
                 line = line[3:]
-        
-        for i in input:
-            print(i)
 
         return input
 
@@ -76,39 +77,43 @@ class Vmm:
         # available page frames; none used yet so all elements are set to 0
         PF = [0] * available_PFs
 
-        print(PF)
-
         address = "0x" + memory_accesses[1][1]
-        print(address)
 
-        # TO DO: for loop through all accesses
+        for operation in memory_accesses:
+            # looking for specific Page Table in the Page Directory
+            PD_index = Vmm.get_PD_index(address)
+            if Vmm.PD[PD_index] == 0:
+                Vmm.PD[PD_index] = 1
 
-        # looking for specific Page Table in the Page Directory
-        PD_index = Vmm.get_PD_index(address)
-        if Vmm.PD[PD_index] == 0:
-            Vmm.PD[PD_index] = 1
+            # looking for specific Page in the Page Table
+            PT_index = Vmm.get_PT_index(address)
+            if Vmm.PT[PT_index][0] == 0:
+                Vmm.PT[PT_index][0] = 1
 
-        # looking for specific Page in the Page Table
-        PT_index = Vmm.get_PT_index(address)
-        if Vmm.PT[PT_index][0] == 0:
-            Vmm.PT[PT_index][0] = 1
+            # if page exists but is not resident in memory, swap it into a random Page Frame
+            if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
+                victim_index = random.randrange(0, available_PFs - 1)
+                Vmm.total_memory_cycles += constants.CYCLES_PER_VICTIM_SELECTION
 
-        # if page exists but is not resident in memory, swap it into a random Page Frame
-        if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
-            victim_index = random.randrange(0, available_PFs - 1)
-            PF[victim_index] = 1 # PF[victim_index] is now being used
-            Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
+                if PF[victim_index] == 1:
+                    Vmm.num_swap_ins += 1
+        
+                PF[victim_index] = 1 # PF[victim_index] is now being used
+                Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
 
-        P_index = Vmm.get_P_index(address)
+                Vmm.num_swap_outs += 1
+                Vmm.total_memory_cycles += constants.CYCLES_PER_SWAP
 
-        if memory_accesses[1][0] == 'w':
-            # perform the write operation
-            Vmm.P[P_index] = memory_accesses[1][2]
-            Vmm.PT[PT_index][2] = 1 # Page has been modified
-        #else:
-            # read operation performed here [nothing happens during the simulation]
-            
-        Vmm.num_memory_accesses += 1
+            P_index = Vmm.get_P_index(address)
+
+            if memory_accesses[1][0] == 'w':
+                # perform the write operation
+                Vmm.P[P_index] = memory_accesses[1][2]
+                Vmm.PT[PT_index][2] = 1 # Page has been modified
+            #else:
+                # read operation performed here [nothing happens during the simulation]
+
+            Vmm.num_memory_accesses += 1
 
 
 memory_accesses = Vmm.process_file()
