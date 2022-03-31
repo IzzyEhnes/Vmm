@@ -13,6 +13,9 @@ class Vmm:
     # no Page Frames exist in the Page Directory yet
     P = [0] * constants.P_SIZE
 
+    num_memory_accesses = 0
+    num_triples = num_memory_accesses + 1
+
     def process_file():
         with open('inputs/input1.txt','r') as f:
             contents = f.read()
@@ -75,6 +78,7 @@ class Vmm:
 
         print(PF)
 
+        # perform writes
         if memory_accesses[1][0] == 'w':
             address = "0x" + memory_accesses[1][1]
             print(address)
@@ -95,9 +99,11 @@ class Vmm:
                 PF[victim_index] = 1 # PF[victim_index] is now being used
                 Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
 
+            # perform the write operation
+            P_index = Vmm.get_P_index(address)
+            Vmm.P[P_index] = memory_accesses[1][2]
+            Vmm.num_memory_accesses += 1
+
 
 memory_accesses = Vmm.process_file()
 Vmm.run_vmm(memory_accesses)
-#print(Vmm.PD[0])
-
-#print(Vmm.P)
