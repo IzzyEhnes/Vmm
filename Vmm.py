@@ -24,13 +24,36 @@ class Vmm:
         
         for i in input:
             print(i)
-        
-        print(len(input))
 
         return input
 
-    def run_Vmm(memory_accesses):
+
+    def run_vmm(memory_accesses):
         available_page_frames = memory_accesses[0][1]
 
+
+    def get_bits(num, k, i):
+
+        # convert number into binary
+        binary = bin(num)
+
+        # remove '0b' from beginning of string
+        binary = binary[2:].zfill(32)
+
+        if i + k > len(binary):
+            end = len(binary) - 1
+        else:
+            end = i + k
+
+        # extract k bit sub-string
+        bit_substr = binary[i : end + 1]
+
+        # convert extracted sub-string back into decimal
+        return int(bit_substr, 2)
+
+
 memory_accesses = Vmm.process_file()
-Vmm.run_Vmm(memory_accesses)
+Vmm.run_vmm(memory_accesses)
+Vmm.get_bits(0x1254, 10, 0)
+Vmm.get_bits(0x1254, 10, 10)
+Vmm.get_bits(0x1254, 12, 20)
