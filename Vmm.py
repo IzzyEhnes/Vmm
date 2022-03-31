@@ -78,31 +78,37 @@ class Vmm:
 
         print(PF)
 
-        # perform writes
+        address = "0x" + memory_accesses[1][1]
+        print(address)
+
+        # TO DO: for loop through all accesses
+
+        # looking for specific Page Table in the Page Directory
+        PD_index = Vmm.get_PD_index(address)
+        if Vmm.PD[PD_index] == 0:
+            Vmm.PD[PD_index] = 1
+
+        # looking for specific Page in the Page Table
+        PT_index = Vmm.get_PT_index(address)
+        if Vmm.PT[PT_index][0] == 0:
+            Vmm.PT[PT_index][0] = 1
+
+        # if page exists but is not resident in memory, swap it into a random Page Frame
+        if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
+            victim_index = random.randrange(0, available_PFs - 1)
+            PF[victim_index] = 1 # PF[victim_index] is now being used
+            Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
+
+        P_index = Vmm.get_P_index(address)
+
         if memory_accesses[1][0] == 'w':
-            address = "0x" + memory_accesses[1][1]
-            print(address)
-
-            # looking for specific Page Table in the Page Directory
-            PD_index = Vmm.get_PD_index(address)
-            if Vmm.PD[PD_index] == 0:
-                Vmm.PD[PD_index] = 1
-
-            # looking for specific Page in the Page Table
-            PT_index = Vmm.get_PT_index(address)
-            if Vmm.PT[PT_index][0] == 0:
-                Vmm.PT[PT_index][0] = 1
-
-            # if page exists but is not resident in memory, swap it into a random Page Frame
-            if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
-                victim_index = random.randrange(0, available_PFs - 1)
-                PF[victim_index] = 1 # PF[victim_index] is now being used
-                Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
-
             # perform the write operation
-            P_index = Vmm.get_P_index(address)
             Vmm.P[P_index] = memory_accesses[1][2]
-            Vmm.num_memory_accesses += 1
+            Vmm.PT[PT_index][2] = 1 # Page has been modified
+        #else:
+            # read operation performed here [nothing happens during the simulation]
+            
+        Vmm.num_memory_accesses += 1
 
 
 memory_accesses = Vmm.process_file()
