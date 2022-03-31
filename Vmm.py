@@ -16,15 +16,17 @@ class Vmm:
     num_memory_accesses = 0
     num_swap_ins = 0
     num_swap_outs = 0
-    num_pages_malloced = 0
     total_memory_cycles = 0
-    max_working_set_size = 0
+    max_working_set_size_ever = 0
     last_working_set_size = 0
+    page_frames_for_user = 0
+    #w = 0
+    #r = 0
 
     def process_file():
         with open('inputs/input1.txt','r') as f:
             contents = f.read()
-            
+                    
         line = " ".join(contents.split()).split()
 
         input = list()
@@ -72,12 +74,24 @@ class Vmm:
         return Vmm.get_bits(int(address, 0), 12, 22)
 
 
+    def get_working_set(PD_index, PT_index):
+        pages_resident_in_memory = 0
+
+        for P in Vmm.PT[PT_index]:
+            if Vmm.PT[PT_index][1] == 1:
+                pages_resident_in_memory += 1
+        
+        Vmm.last_working_set_size = pages_resident_in_memory
+
+        if Vmm.last_working_set_size > Vmm.max_working_set_size_ever:
+            Vmm.max_working_set_size_ever = Vmm.last_working_set_size
+
+
     def run_vmm(memory_accesses):
-        available_PFs = int(memory_accesses[0][1])
+        Vmm.page_frames_for_user = int(memory_accesses[0][1])
 
         # available page frames; none used yet so all elements are set to 0
-        PF = [0] * available_PFs
-
+        PF = [0] * Vmm.page_frames_for_user
         address = "0x" + memory_accesses[1][1]
 
         for operation in memory_accesses:
@@ -91,16 +105,18 @@ class Vmm:
             if Vmm.PT[PT_index][0] == 0:
                 Vmm.PT[PT_index][0] = 1
 
+            Vmm.get_working_set(PD_index, PT_index)
+
             # if page exists but is not resident in memory, swap it into a random Page Frame
             if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
-                victim_index = random.randrange(0, available_PFs - 1)
+                victim_index = random.randrange(0, Vmm.page_frames_for_user - 1)
                 Vmm.total_memory_cycles += constants.CYCLES_PER_VICTIM_SELECTION
 
                 if PF[victim_index] == 1:
                     Vmm.num_swap_ins += 1
         
                 PF[victim_index] = 1 # PF[victim_index] is now being used
-                
+
                 Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
                 
                 Vmm.total_memory_cycles += constants.CYCLES_PER_SWAP
@@ -111,18 +127,17 @@ class Vmm:
 
             P_index = Vmm.get_P_index(address)
 
-            if memory_accesses[1][0] == 'w':
+            if operation[0] == 'w':
+                #Vmm.w += 1
                 # perform the write operation
                 Vmm.P[P_index] = memory_accesses[1][2]
                 Vmm.PT[PT_index][2] = 1 # Page has been modified
             #else:
                 # read operation performed here [nothing happens during the simulation]
+                #Vmm.r += 1
+
 
             Vmm.num_memory_accesses += 1
-
-
-memory_accesses = Vmm.process_file()
-Vmm.run_vmm(memory_accesses)
 
 def print_output():
     print("* * * Paging Activity Statistics * * *  ")
@@ -130,12 +145,21 @@ def print_output():
     print("number of triples (1 + access)  = ", Vmm.num_memory_accesses + 1)
     print("number of swap ins (faults)     = ", Vmm.num_swap_ins)
     print("number of swap outs             = ", Vmm.num_swap_outs)
-    print("total number of pages malloced  = ", Vmm.num_pages_malloced)
+    print("total number of pages malloced  = ", Vmm.page_frames_for_user + 1)
     print("number of pages for Page Tables = ", 1)
-    print("number of page frames for user  = ", )
+    print("number of page frames for user  = ", Vmm.page_frames_for_user)
     print("total memory cycles             = ", Vmm.total_memory_cycles )
     print("cycles w/o Vmm                  = ", Vmm.num_memory_accesses * 10)
     print("cycles per swap_in              = ", constants.CYCLES_PER_SWAP)
     print("cycles per swap_out             = ", constants.CYCLES_PER_SWAP)
-    print("last working set size           = ", Vmm.working_set_size)
-    print("max working set size ever       = ", Vmm.working_set_size)
+    print("last working set size           = ", Vmm.last_working_set_size)
+    print("max working set size ever       = ", Vmm.max_working_set_size_ever)
+    print("max physical pages              = ", Vmm.max_working_set_size_ever)
+    print("page size                       = ", constants.P_SIZE)
+    print("replacement algorithm           = random")
+    #print("w's: ", Vmm.w)
+    #print("r's: ", Vmm.r)
+
+memory_accesses = Vmm.process_file()
+Vmm.run_vmm(memory_accesses)
+print_output()
