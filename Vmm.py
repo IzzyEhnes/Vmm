@@ -1,9 +1,16 @@
 import constants
+import random
 
 class Vmm:
     
+    # no Page Tables exist in the Page Directory yet
     PD = [0] * constants.PD_SIZE
-    PT = [0] * constants.PT_SIZE
+
+    # no Pages exist in the Page Table yet,
+    # they are not resident in memory, and have not been modified
+    PT = [[0, 0, 0]] * constants.PT_SIZE
+
+    # no Page Frames exist in the Page Directory yet
     P = [0] * constants.P_SIZE
 
     def process_file():
@@ -61,37 +68,36 @@ class Vmm:
 
 
     def run_vmm(memory_accesses):
-        available_page_frames = memory_accesses[0][1]
+        available_PFs = int(memory_accesses[0][1])
+
+        # available page frames; none used yet so all elements are set to 0
+        PF = [0] * available_PFs
+
+        print(PF)
 
         if memory_accesses[1][0] == 'w':
             address = "0x" + memory_accesses[1][1]
             print(address)
 
-            # looking for specific Page Table
+            # looking for specific Page Table in the Page Directory
             PD_index = Vmm.get_PD_index(address)
-            print(PD_index)
-            
             if Vmm.PD[PD_index] == 0:
                 Vmm.PD[PD_index] = 1
 
-            # looking for specific Page
+            # looking for specific Page in the Page Table
             PT_index = Vmm.get_PT_index(address)
-            print(PT_index)
+            if Vmm.PT[PT_index][0] == 0:
+                Vmm.PT[PT_index][0] = 1
 
-            if Vmm.PT[PT_index] == 0:
-                Vmm.PT[PT_index] = 1
-
-            # looking for specific Page Frame
-            P_index = Vmm.get_P_index(address)
-            print(P_index)
-
-            if Vmm.PT[P_index] == 0:
-                Vmm.PT[P_index] = 1
-
-            
-                
+            # if page exists but is not resident in memory, swap it into a random Page Frame
+            if Vmm.PT[PT_index][0] == 1 and Vmm.PT[PT_index][1] == 0:
+                victim_index = random.randrange(0, available_PFs - 1)
+                PF[victim_index] = 1 # PF[victim_index] is now being used
+                Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
 
 
 memory_accesses = Vmm.process_file()
 Vmm.run_vmm(memory_accesses)
-print(Vmm.PD[0])
+#print(Vmm.PD[0])
+
+#print(Vmm.P)
