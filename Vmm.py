@@ -28,10 +28,6 @@ class Vmm:
         return input
 
 
-    def run_vmm(memory_accesses):
-        available_page_frames = memory_accesses[0][1]
-
-
     def get_bits(num, k, i):
 
         # convert number into binary
@@ -52,8 +48,34 @@ class Vmm:
         return int(bit_substr, 2)
 
 
+    def get_PD_index(address):
+        return Vmm.get_bits(int(address, 0), 10, 0)
+
+
+    def get_PT_index(address):
+        return Vmm.get_bits(int(address, 0), 10, 10)
+
+
+    def get_P_index(address):
+        return Vmm.get_bits(int(address, 0), 12, 22)
+
+
+    def run_vmm(memory_accesses):
+        available_page_frames = memory_accesses[0][1]
+
+        if memory_accesses[1][0] == 'w':
+            address = "0x" + memory_accesses[1][1]
+            print(address)
+            PD_index = Vmm.get_PD_index(address)
+            print(PD_index)
+            
+            if Vmm.PD[PD_index] == None:
+                Vmm.PD[PD_index] = 1
+
+            
+
+
+
 memory_accesses = Vmm.process_file()
 Vmm.run_vmm(memory_accesses)
-Vmm.get_bits(0x1254, 10, 0)
-Vmm.get_bits(0x1254, 10, 10)
-Vmm.get_bits(0x1254, 12, 20)
+print(Vmm.PD[0])
