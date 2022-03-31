@@ -1,11 +1,11 @@
 import constants
 
 class Vmm:
-
-    PD = [None] * constants.PD_SIZE
-    PT = [None] * constants.PT_SIZE
-    P = [None] * constants.PAGE_SIZE
     
+    PD = [0] * constants.PD_SIZE
+    PT = [0] * constants.PT_SIZE
+    P = [0] * constants.P_SIZE
+
     def process_file():
         with open('inputs/input1.txt','r') as f:
             contents = f.read()
@@ -66,14 +66,30 @@ class Vmm:
         if memory_accesses[1][0] == 'w':
             address = "0x" + memory_accesses[1][1]
             print(address)
+
+            # looking for specific Page Table
             PD_index = Vmm.get_PD_index(address)
             print(PD_index)
             
-            if Vmm.PD[PD_index] == None:
+            if Vmm.PD[PD_index] == 0:
                 Vmm.PD[PD_index] = 1
 
-            
+            # looking for specific Page
+            PT_index = Vmm.get_PT_index(address)
+            print(PT_index)
 
+            if Vmm.PT[PT_index] == 0:
+                Vmm.PT[PT_index] = 1
+
+            # looking for specific Page Frame
+            P_index = Vmm.get_P_index(address)
+            print(P_index)
+
+            if Vmm.PT[P_index] == 0:
+                Vmm.PT[P_index] = 1
+
+            
+                
 
 
 memory_accesses = Vmm.process_file()
