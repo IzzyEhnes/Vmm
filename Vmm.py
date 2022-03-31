@@ -14,11 +14,12 @@ class Vmm:
     P = [0] * constants.P_SIZE
 
     num_memory_accesses = 0
-    num_triples = num_memory_accesses + 1
     num_swap_ins = 0
     num_swap_outs = 0
     num_pages_malloced = 0
     total_memory_cycles = 0
+    max_working_set_size = 0
+    last_working_set_size = 0
 
     def process_file():
         with open('inputs/input1.txt','r') as f:
@@ -99,10 +100,14 @@ class Vmm:
                     Vmm.num_swap_ins += 1
         
                 PF[victim_index] = 1 # PF[victim_index] is now being used
+                
                 Vmm.PT[PT_index][1] = 1 # Page is now resident in memory
-
-                Vmm.num_swap_outs += 1
+                
                 Vmm.total_memory_cycles += constants.CYCLES_PER_SWAP
+
+                # if data is swapped out before being written
+                if memory_accesses[1][0] == 'w':
+                    Vmm.num_swap_outs += 1
 
             P_index = Vmm.get_P_index(address)
 
@@ -118,3 +123,19 @@ class Vmm:
 
 memory_accesses = Vmm.process_file()
 Vmm.run_vmm(memory_accesses)
+
+def print_output():
+    print("* * * Paging Activity Statistics * * *  ")
+    print("number of memory accesses       = ", Vmm.num_memory_accesses)
+    print("number of triples (1 + access)  = ", Vmm.num_memory_accesses + 1)
+    print("number of swap ins (faults)     = ", Vmm.num_swap_ins)
+    print("number of swap outs             = ", Vmm.num_swap_outs)
+    print("total number of pages malloced  = ", Vmm.num_pages_malloced)
+    print("number of pages for Page Tables = ", 1)
+    print("number of page frames for user  = ", )
+    print("total memory cycles             = ", Vmm.total_memory_cycles )
+    print("cycles w/o Vmm                  = ", Vmm.num_memory_accesses * 10)
+    print("cycles per swap_in              = ", constants.CYCLES_PER_SWAP)
+    print("cycles per swap_out             = ", constants.CYCLES_PER_SWAP)
+    print("last working set size           = ", Vmm.working_set_size)
+    print("max working set size ever       = ", Vmm.working_set_size)
